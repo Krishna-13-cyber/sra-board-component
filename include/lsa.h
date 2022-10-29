@@ -62,5 +62,6 @@ esp_err_t enable_line_sensor();
            for all the pins specified in lsa_pins array
 **/
 line_sensor_array read_line_sensor();
+void calibrate(line_sensor_array line_sensor_readings);
 
 #endif

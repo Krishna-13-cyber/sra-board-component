@@ -23,6 +23,9 @@
  */
 
 #include "lsa.h"
+#include "freertos/task.h"
+#include "sra_board.h"
+
 
 static const int line_sensor_pins[4] = {LSA_A0, LSA_A1, LSA_A2, LSA_A3};
 
@@ -36,10 +39,8 @@ line_sensor_array read_line_sensor()
 {
     line_sensor_array line_sensor_readings;
 
-    for (int i = 0; i < 4; i++)
-    {
-        line_sensor_readings.adc_reading[i] = 0;
-    }
+
+   calibrate(line_sensor_readings);
 
     for (int i = 0; i < NUMBER_OF_SAMPLES; i++)
     {
@@ -56,3 +57,41 @@ line_sensor_array read_line_sensor()
 
     return line_sensor_readings;
 }
+
+void calibrate(line_sensor_array line_sensor_readings)
+{
+    int max[4];
+    int min[4];
+    int n = 10;
+    for (int i = 0; i < 4; i++)
+        {
+            max[i] = read_adc(line_sensor_pins[0]);
+            min[i] = read_adc(line_sensor_pins[0]);
+        } 
+
+    while(n>0)
+        {
+            for (int j = 0; j < 4; j++)
+                {
+                    line_sensor_readings.adc_reading[j] = line_sensor_readings.adc_reading[j] + read_adc(line_sensor_pins[j]);
+                    if (line_sensor_readings.adc_reading[j] > max[j]) 
+                        {
+                            max[j] = line_sensor_readings.adc_reading[j];
+                        }
+                    if (line_sensor_readings.adc_reading[j] < min[j]) 
+                        {
+                            min[j] = line_sensor_readings.adc_reading[j];
+                        }
+                }
+        
+            set_motor_speed(25, 20, 25); // (random values for parameters) move a little forward for getting lsa
+            vTaskDelay(100);    
+            n--;
+        }   
+        for (int i = 0; i < 4; i++)
+            {
+                line_sensor_readings.adc_reading[i] = (max[i]+ min[i])/2  ;
+            } 
+
+    return ;
+} 
